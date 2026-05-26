@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Vidya AI — Smart Study Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="window.katexReady=true"></script>
+
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root{
+  --bg:       #f0f4ff;
+  --bg2:      #e8eef9;
+  --sidebar:  #ffffff;
+  --chat-bg:  #f7f9ff;
+  --surface:  #ffffff;
+  --surface2: #f0f4ff;
+  --border:   #e1e8f5;
+  --border2:  #cdd7ef;
+
+  --brand:    #4f6ef7;
+  --brand-d:  #3a56e0;
+  --brand-lt: #eef1fe;
+  --brand2:   #7c55f5;
+  --accent:   #f97316;
+  --green:    #22c55e;
+  --red:      #ef4444;
+
+  --text:     #1a1f36;
+  --text2:    #4a5578;
+  --text3:    #8892b0;
+  --text-inv: #ffffff;
+
+  --shadow-sm: 0 1px 3px rgba(79,110,247,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow:    0 4px 16px rgba(79,110,247,0.1),0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 12px 40px rgba(79,110,247,0.14),0 4px 12px rgba(0,0,0,0.06);
+  --r:         16px;
+  --r-sm:      10px;
+  --r-xs:      6px;
+  --t:         0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;font-size:15px}
+body{
+  font-family:'Plus Jakarta Sans','Noto Sans Devanagari',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+
+/* ═══════════════════════════════════════════════
+   LAYOUT: SIDEBAR + MAIN
+═══════════════════════════════════════════════ */
+.sidebar{
+  width:260px;flex-shrink:0;
+  background:var(--sidebar);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:transform var(--t);
+  z-index:50;
+}
+.main{
+  flex:1;display:flex;flex-direction:column;
+  overflow:hidden;min-width:0;
+}
+
+/* ── Sidebar Header ── */
+.sb-header{
+  padding:22px 20px 16px;
+  border-bottom:1px solid var(--border);
+}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.brand-logo{
+  width:38px;height:38px;border-radius:11px;
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;flex-shrink:0;
+  box-shadow:0 4px 12px rgba(79,110,247,0.3);
+}
+.brand-name{font-size:1.1rem;font-weight:800;color:var(--text);letter-spacing:-0.4px}
+.brand-sub{font-size:0.65rem;color:var(--text3);font-weight:500;letter-spacing:0.5px;text-transform:uppercase}
+
+.new-chat-btn{
+  width:100%;padding:10px 14px;
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  border:none;border-radius:var(--r-sm);
+  color:#fff;font-weight:700;font-size:0.85rem;
+  cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:8px;
+  transition:all var(--t);
+  box-shadow:0 4px 14px rgba(79,110,247,0.3);
+}
+.new-chat-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,110,247,0.4)}
+
+/* ── Subject List ── */
+.sb-section-label{
+  padding:16px 20px 8px;
+  font-size:0.65rem;font-weight:700;
+  color:var(--text3);letter-spacing:1px;text-transform:uppercase;
+}
+.subject-list{flex:1;overflow-y:auto;padding:0 10px 10px}
+.subj-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:var(--r-sm);
+  cursor:pointer;transition:all var(--t);
+  margin-bottom:2px;color:var(--text2);font-size:0.85rem;font-weight:500;
+}
+.subj-item:hover{background:var(--brand-lt);color:var(--brand)}
+.subj-item.active{background:var(--brand-lt);color:var(--brand);font-weight:700}
+.subj-icon{font-size:16px;width:24px;text-align:center}
+
+/* ── Sidebar Footer ── */
+.sb-footer{
+  padding:14px 16px;
+  border-top:1px solid var(--border);
+}
+.api-status{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px;border-radius:var(--r-sm);
+  background:var(--surface2);font-size:0.78rem;
+  color:var(--text2);cursor:pointer;transition:all var(--t);
+  border:1px solid var(--border);
+}
+.api-status:hover{border-color:var(--brand);color:var(--brand)}
+.api-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;
+  box-shadow:0 0 6px rgba(34,197,94,0.5)}
+.api-dot.off{background:var(--red);box-shadow:0 0 6px rgba(239,68,68,0.5)}
+
+/* ═══════════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════════ */
+.topbar{
+  padding:14px 20px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  flex-shrink:0;
+}
+.topbar-menu{
+  width:36px;height:36px;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:var(--surface2);
+  cursor:pointer;font-size:18px;
+  display:none;align-items:center;justify-content:center;
+  transition:all var(--t);flex-shrink:0;color:var(--text2);
+}
+.topbar-menu:hover{border-color:var(--brand);color:var(--brand)}
+.topbar-subject{
+  display:flex;align-items:center;gap:8px;flex:1;min-width:0;
+}
+.topbar-icon{
+  width:34px;height:34px;border-radius:9px;
+  background:var(--brand-lt);
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  flex-shrink:0;
+}
+.topbar-title{font-weight:700;font-size:0.95rem;color:var(--text);white-space:nowrap}
+.topbar-subtitle{font-size:0.72rem;color:var(--text3);margin-top:1px}
+.topbar-actions{display:flex;gap:6px}
+.icon-btn{
+  width:36px;height:36px;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:var(--surface2);
+  cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t);color:var(--text2);flex-shrink:0;
+}
+.icon-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-lt)}
+
+/* ═══════════════════════════════════════════════
+   CHAT AREA
+═══════════════════════════════════════════════ */
+.chat-scroll{
+  flex:1;overflow-y:auto;
+  background:var(--chat-bg);
+}
+.chat-inner{
+  max-width:780px;margin:0 auto;
+  padding:24px 20px 10px;
+  display:flex;flex-direction:column;gap:20px;
+}
+
+/* ── Welcome ── */
+.welcome{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;
+  padding:48px 24px 32px;gap:16px;
+  animation:fadeUp .6s ease both;
+}
+.welcome-orb{
+  width:86px;height:86px;border-radius:26px;
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  display:flex;align-items:center;justify-content:center;font-size:40px;
+  box-shadow:0 12px 36px rgba(79,110,247,0.28);
+  animation:float 4s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.welcome h2{font-size:1.7rem;font-weight:800;color:var(--text);letter-spacing:-0.5px}
+.welcome p{font-size:0.9rem;color:var(--text2);max-width:440px;line-height:1.7}
+
+.quick-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:10px;width:100%;max-width:520px;margin-top:8px;
+}
+.qp{
+  padding:12px 14px;border-radius:var(--r-sm);
+  background:var(--surface);border:1px solid var(--border);
+  cursor:pointer;text-align:left;font-size:0.82rem;color:var(--text2);
+  transition:all var(--t);font-weight:500;line-height:1.4;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.qp:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-lt);transform:translateY(-2px);box-shadow:var(--shadow)}
+.qp-em{font-size:18px;flex-shrink:0;margin-top:1px}
+
+/* ── Messages ── */
+.msg{display:flex;gap:12px;align-items:flex-start;animation:fadeUp .3s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+
+.av{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;
+}
+.msg.user .av{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff}
+.msg.ai   .av{background:linear-gradient(135deg,#e8eef9,#dde5f5);color:var(--brand);border:1px solid var(--border)}
+
+.bubble{
+  max-width:76%;border-radius:var(--r);padding:13px 16px;
+  position:relative;font-size:0.9rem;line-height:1.7;
+}
+.msg.user .bubble{
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  color:#fff;border-bottom-right-radius:4px;
+  box-shadow:0 4px 16px rgba(79,110,247,0.22);
+}
+.msg.ai .bubble{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);border-bottom-left-radius:4px;
+  box-shadow:var(--shadow-sm);
+}
+
+.subj-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--brand-lt);border:1px solid rgba(79,110,247,0.2);
+  border-radius:999px;padding:2px 10px;
+  font-size:0.68rem;font-weight:700;color:var(--brand);
+  letter-spacing:0.4px;margin-bottom:8px;
+}
+
+/* image preview in user bubble */
+.msg-img-prev{
+  max-width:240px;max-height:200px;
+  border-radius:10px;margin-bottom:8px;
+  display:block;object-fit:cover;
+  border:2px solid rgba(255,255,255,0.25);
+}
+
+/* ── AI Markdown ── */
+.bubble h1,.bubble h2,.bubble h3{margin:12px 0 6px;color:var(--brand);font-weight:700}
+.bubble h1{font-size:1.05rem}.bubble h2{font-size:.97rem}.bubble h3{font-size:.9rem;color:var(--brand2)}
+.bubble p{margin-bottom:8px}.bubble p:last-child{margin-bottom:0}
+.bubble ul,.bubble ol{padding-left:20px;margin:8px 0}
+.bubble li{margin-bottom:4px}
+.bubble strong{color:var(--brand-d);font-weight:700}
+.bubble em{color:var(--brand2)}
+.bubble code{
+  background:#eef1fe;border-radius:5px;padding:2px 7px;
+  font-family:'JetBrains Mono',monospace;font-size:0.81rem;color:#3a56e0;
+  border:1px solid rgba(79,110,247,0.15);
+}
+.bubble pre{
+  background:#1a1f36;border-radius:var(--r-sm);padding:14px;
+  overflow-x:auto;margin:10px 0;border:1px solid #2a3050;
+}
+.bubble pre code{background:none;border:none;padding:0;color:#a5b4fc;font-size:0.81rem}
+.bubble blockquote{
+  border-left:3px solid var(--brand);padding-left:14px;margin:10px 0;
+  color:var(--text2);font-style:italic;
+}
+.bubble table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.84rem}
+.bubble th{background:var(--brand-lt);padding:8px 12px;border:1px solid var(--border);color:var(--brand);text-align:left;font-weight:700}
+.bubble td{padding:7px 12px;border:1px solid var(--border)}
+.bubble tr:nth-child(even) td{background:var(--surface2)}
+.bubble a{color:var(--brand);text-decoration:underline}
+
+/* ── Typing ── */
+.typing{display:flex;gap:5px;align-items:center;padding:4px 2px}
+.td{width:7px;height:7px;border-radius:50%;background:var(--brand);opacity:.4;
+  animation:bounce 1.2s ease infinite}
+.td:nth-child(2){animation-delay:.15s}.td:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
+
+/* ─ Error ─ */
+.err-bubble{
+  padding:12px 16px;border-radius:var(--r-sm);
+  background:#fef2f2;border:1px solid #fecaca;
+  color:#dc2626;font-size:0.85rem;display:flex;align-items:flex-start;gap:10px;
+}
+
+/* ═══════════════════════════════════════════════
+   IMAGE PREVIEW BAR (above input)
+═══════════════════════════════════════════════ */
+.img-preview-bar{
+  display:none;
+  padding:10px 20px;background:var(--surface);
+  border-top:1px solid var(--border);
+  max-width:780px;margin:0 auto;width:100%;
+}
+.img-preview-bar.show{display:flex;align-items:center;gap:10px}
+.img-thumb-wrap{position:relative;display:inline-block}
+.img-thumb{
+  height:64px;width:auto;max-width:100px;border-radius:9px;
+  object-fit:cover;border:2px solid var(--border);display:block;
+}
+.img-remove{
+  position:absolute;top:-7px;right:-7px;
+  width:20px;height:20px;border-radius:50%;
+  background:var(--red);border:2px solid white;
+  color:#fff;font-size:11px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;line-height:1;font-weight:700;
+  box-shadow:var(--shadow-sm);
+}
+.img-info{font-size:0.78rem;color:var(--text2);flex:1;min-width:0}
+.img-info strong{display:block;color:var(--text);font-size:0.82rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ═══════════════════════════════════════════════
+   INPUT AREA
+═══════════════════════════════════════════════ */
+.input-area{
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:12px 20px 16px;flex-shrink:0;
+}
+.input-area-inner{max-width:780px;margin:0 auto}
+
+.input-box{
+  background:var(--surface2);
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:10px 10px 10px 16px;
+  display:flex;align-items:flex-end;gap:8px;
+  transition:border-color var(--t),box-shadow var(--t);
+}
+.input-box:focus-within{
+  border-color:var(--brand);
+  box-shadow:0 0 0 3px rgba(79,110,247,0.1);
+}
+
+.ta{
+  flex:1;border:none;background:transparent;
+  outline:none;resize:none;
+  font-family:'Plus Jakarta Sans','Noto Sans Devanagari',sans-serif;
+  font-size:0.9rem;color:var(--text);line-height:1.6;
+  min-height:24px;max-height:160px;overflow-y:auto;
+  padding:2px 0;
+}
+.ta::placeholder{color:var(--text3)}
+
+.input-btns{display:flex;gap:6px;align-items:center;flex-shrink:0;padding-bottom:2px}
+
+/* image upload btn */
+.img-btn{
+  width:36px;height:36px;border-radius:9px;
+  border:1.5px solid var(--border);background:var(--surface);
+  cursor:pointer;font-size:17px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t);color:var(--text2);
+  position:relative;overflow:hidden;
+}
+.img-btn:hover{border-color:var(--accent);color:var(--accent);background:#fff7ed}
+.img-btn input[type=file]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;
+}
+
+.send-btn{
+  width:40px;height:40px;border-radius:11px;border:none;
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  color:#fff;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t);flex-shrink:0;
+  box-shadow:0 4px 12px rgba(79,110,247,0.3);
+}
+.send-btn:hover:not(:disabled){transform:scale(1.07);box-shadow:0 6px 20px rgba(79,110,247,0.4)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+.input-footer{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:8px;padding:0 2px;
+}
+.input-hints{display:flex;gap:14px}
+.hint{font-size:0.67rem;color:var(--text3);display:flex;align-items:center;gap:4px}
+.kbd{
+  background:var(--border);border-radius:4px;
+  padding:1px 6px;font-family:'JetBrains Mono',monospace;
+  font-size:0.62rem;color:var(--text2);
+}
+.char-ct{font-size:0.68rem;color:var(--text3)}
+
+/* ═══════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════ */
+.overlay{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(15,20,40,0.45);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;animation:fadeIn .2s ease;
+}
+.overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.modal{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;padding:28px;
+  width:100%;max-width:460px;
+  box-shadow:var(--shadow-lg);
+  animation:popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{transform:scale(.92) translateY(16px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.modal-head h3{font-size:1.1rem;font-weight:800;color:var(--text)}
+.modal-x{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;
+  line-height:1;transition:color var(--t)}
+.modal-x:hover{color:var(--red)}
+.modal p{font-size:0.83rem;color:var(--text2);margin-bottom:18px;line-height:1.6}
+
+.steps{display:flex;flex-direction:column;gap:10px;margin:16px 0 20px}
+.step{
+  display:flex;align-items:flex-start;gap:12px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:12px 14px;
+}
+.sn{
+  width:24px;height:24px;border-radius:7px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  color:#fff;font-size:.73rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+}
+.st{font-size:0.81rem;color:var(--text2);line-height:1.5}
+.st a{color:var(--brand);font-weight:600;text-decoration:none}
+.st a:hover{text-decoration:underline}
+
+.modal-row{display:flex;gap:8px}
+.m-input{
+  flex:1;padding:10px 14px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:var(--r-sm);color:var(--text);font-size:.85rem;
+  font-family:'JetBrains Mono',monospace;outline:none;
+  transition:border-color var(--t);
+}
+.m-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,110,247,0.1)}
+.m-input::placeholder{color:var(--text3)}
+.btn-primary{
+  padding:10px 20px;
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  border:none;border-radius:var(--r-sm);
+  color:#fff;font-weight:700;font-size:.85rem;
+  cursor:pointer;transition:all var(--t);white-space:nowrap;
+  box-shadow:0 4px 12px rgba(79,110,247,0.3);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,110,247,0.4)}
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--text);color:#fff;
+  border-radius:10px;padding:10px 20px;
+  font-size:.83rem;font-weight:600;z-index:9999;
+  box-shadow:var(--shadow-lg);white-space:nowrap;pointer-events:none;
+  animation:toastIn .3s ease,toastOut .3s ease 2.4s forwards;
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateX(-50%) translateY(6px)}}
+
+/* ═══════════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════════ */
+@media(max-width:700px){
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;
+    transform:translateX(-100%);
+    box-shadow:var(--shadow-lg);
+  }
+  .sidebar.open{transform:translateX(0)}
+  .topbar-menu{display:flex}
+  .quick-grid{grid-template-columns:1fr}
+  .bubble{max-width:88%}
+  .modal{padding:22px 18px}
+  .sidebar-overlay{
+    position:fixed;inset:0;z-index:49;
+    background:rgba(0,0,0,.3);display:none;
+  }
+  .sidebar-overlay.show{display:block}
+  .input-hints{display:none}
+}
+@media(max-width:400px){
+  .welcome h2{font-size:1.4rem}
+  .welcome-orb{width:70px;height:70px;font-size:32px}
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sbOverlay"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-header">
+    <div class="brand">
+      <div class="brand-logo">📚</div>
+      <div>
+        <div class="brand-name">Vidya AI</div>
+        <div class="brand-sub">Gemini 2.5 Flash</div>
+      </div>
+    </div>
+    <button class="new-chat-btn" id="newChatBtn">
+      <span>＋</span> New Chat
+    </button>
+  </div>
+
+  <div class="sb-section-label">📖 Subjects</div>
+  <div class="subject-list" id="subjectList">
+    <div class="subj-item active" data-s="General"      data-e="🌟">🌟 <span>General</span></div>
+    <div class="subj-item" data-s="Hindi"          data-e="📝">📝 <span>Hindi</span></div>
+    <div class="subj-item" data-s="English"        data-e="🇬🇧">🇬🇧 <span>English</span></div>
+    <div class="subj-item" data-s="Mathematics"    data-e="🔢">🔢 <span>Mathematics</span></div>
+    <div class="subj-item" data-s="Physics"        data-e="⚛️">⚛️ <span>Physics</span></div>
+    <div class="subj-item" data-s="Chemistry"      data-e="🧪">🧪 <span>Chemistry</span></div>
+    <div class="subj-item" data-s="Biology"        data-e="🌿">🌿 <span>Biology</span></div>
+    <div class="subj-item" data-s="History"        data-e="🏛️">🏛️ <span>History</span></div>
+    <div class="subj-item" data-s="Geography"      data-e="🌍">🌍 <span>Geography</span></div>
+    <div class="subj-item" data-s="Computer"       data-e="💻">💻 <span>Computer Sc.</span></div>
+    <div class="subj-item" data-s="Economics"      data-e="📈">📈 <span>Economics</span></div>
+    <div class="subj-item" data-s="Science"        data-e="🔬">🔬 <span>Science</span></div>
+  </div>
+
+  <div class="sb-footer">
+    <div class="api-status" id="apiStatus" title="API Key settings">
+      <div class="api-dot" id="apiDot"></div>
+      <span id="apiStatusTxt">API Connected ✓</span>
+      <span style="margin-left:auto;font-size:12px;color:var(--text3)">⚙️</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button class="topbar-menu icon-btn" id="menuBtn">☰</button>
+    <div class="topbar-subject">
+      <div class="topbar-icon" id="topbarIcon">🌟</div>
+      <div>
+        <div class="topbar-title" id="topbarTitle">General Assistant</div>
+        <div class="topbar-subtitle">Hindi & English • Image Support</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="clearBtn" title="Clear chat">🗑️</button>
+      <button class="icon-btn" id="apiBtn"   title="API Key">🔑</button>
+    </div>
+  </div>
+
+  <!-- Chat scroll -->
+  <div class="chat-scroll" id="chatScroll">
+    <div class="chat-inner" id="chatInner">
+      <!-- Welcome screen -->
+      <div class="welcome" id="welcomeEl">
+        <div class="welcome-orb">🎓</div>
+        <h2>Namaste! Main hoon Vidya AI</h2>
+        <p>Apna koi bhi sawal poochho — Hindi ya English mein.<br/>
+           Text likho <strong>ya photo upload karo</strong> — main samjha doonga! 📸</p>
+        <div class="quick-grid">
+          <div class="qp" data-q="Quadratic equation step-by-step solve karo: x²-5x+6=0">
+            <span class="qp-em">📐</span>Quadratic Equation solve karo
+          </div>
+          <div class="qp" data-q="Photosynthesis ka process Hindi mein detail mein samjhao.">
+            <span class="qp-em">🌱</span>Photosynthesis explain karo
+          </div>
+          <div class="qp" data-q="Newton ke teen Laws of Motion examples ke saath samjhao.">
+            <span class="qp-em">⚡</span>Newton's 3 Laws of Motion
+          </div>
+          <div class="qp" data-q="Write a 150-word essay on 'The Importance of Education'.">
+            <span class="qp-em">✍️</span>Essay on Education (English)
+          </div>
+          <div class="qp" data-q="Periodic table ke first 20 elements, unke symbols aur atomic numbers batao.">
+            <span class="qp-em">⚗️</span>Periodic Table (first 20)
+          </div>
+          <div class="qp" data-q="Mughal Samrajya ka itihaas — sthapna se ant tak summarize karo.">
+            <span class="qp-em">🏛️</span>Mughal Samrajya ka Itihas
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image preview bar -->
+  <div class="img-preview-bar" id="imgBar">
+    <div class="img-thumb-wrap">
+      <img class="img-thumb" id="imgThumb" src="" alt="preview"/>
+      <div class="img-remove" id="imgRemove">✕</div>
+    </div>
+    <div class="img-info">
+      <strong id="imgName">image.jpg</strong>
+      <span id="imgSize">—</span>
+    </div>
+  </div>
+
+  <!-- Input Area -->
+  <div class="input-area">
+    <div class="input-area-inner">
+      <div class="input-box">
+        <textarea class="ta" id="ta" rows="1"
+          placeholder="Apna sawal likho ya photo upload karo... 📸"
+          maxlength="8000"></textarea>
+        <div class="input-btns">
+          <label class="img-btn" title="Image upload karo">
+            📷
+            <input type="file" id="fileInput" accept="image/*" />
+          </label>
+          <button class="send-btn" id="sendBtn" disabled title="Send (Enter)">➤</button>
+        </div>
+      </div>
+      <div class="input-footer">
+        <div class="input-hints">
+          <span class="hint"><span class="kbd">Enter</span> Send</span>
+          <span class="hint"><span class="kbd">Shift+Enter</span> New line</span>
+          <span class="hint">📷 Image support</span>
+        </div>
+        <span class="char-ct" id="charCt">0 / 8000</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ API Modal ═══ -->
+<div class="overlay hidden" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>🔑 Gemini API Key</h3>
+      <button class="modal-x" id="modalClose">✕</button>
+    </div>
+    <p>Google AI Studio pe FREE API key banao — koi credit card nahi chahiye!</p>
+    <div class="steps">
+      <div class="step">
+        <div class="sn">1</div>
+        <div class="st">
+          <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>
+          pe jao aur Google se login karo.
+        </div>
+      </div>
+      <div class="step">
+        <div class="sn">2</div>
+        <div class="st">"Create API Key" click karo — bilkul FREE hai.</div>
+      </div>
+      <div class="step">
+        <div class="sn">3</div>
+        <div class="st">Key copy karke neeche paste karo aur Save karo. 🎉</div>
+      </div>
+    </div>
+    <div class="modal-row">
+      <input type="password" class="m-input" id="modalKey"
+             placeholder="AIzaSy... paste karo" autocomplete="off"/>
+      <button class="btn-primary" id="modalSave">Save 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+/* ── CONFIG ───────────────────────────────────────────── */
+const DEFAULT_KEY = 'AIzaSyDzN9hm9wJsQPzi3_4E2OZOM2KXbCrWJks';
+let   API_KEY     = localStorage.getItem('vidya_api_key') || DEFAULT_KEY;
+const MODEL       = 'gemini-2.5-flash';
+const API_URL     = k =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${k}`;
+
+const SUBJECT_PROMPTS = {
+  General:     'You are Vidya AI, a helpful and friendly study assistant. Answer in the same language as the question (Hindi or English). Be clear, structured, and educational. Use examples when helpful.',
+  Hindi:       'Tum ek expert Hindi teacher ho. Grammar, sahitya, nibandh, vyakaran, ras, chhand — sab Hindi mein explain karo with udaharans. Shuddh aur saral Hindi use karo.',
+  English:     'You are an expert English teacher. Help with grammar, essays, comprehension, vocabulary, literature, and writing. Give clear examples and explanations. Be encouraging.',
+  Mathematics: 'Tum ek expert Math teacher ho. Har problem step-by-step solve karo, formulas clearly explain karo. Hindi-English mix kar sakte ho. Neat, logical steps dikhao.',
+  Physics:     'Tum ek Physics teacher ho. Concepts, formulas, numerical problems — sab step-by-step samjhao. Real-life examples do. Diagrams ke baare mein bhi describe karo.',
+  Chemistry:   'Tum ek Chemistry teacher ho. Reactions, equations, mechanisms, periodic trends — clearly explain karo with proper chemical formulas and balanced equations.',
+  Biology:     'Tum ek Biology teacher ho. Life processes, anatomy, genetics, ecology — clearly samjhao with diagrams described. NCERT level se shuru karke depth mein jao.',
+  History:     'Tum ek History teacher ho. Historical events, dates, causes, effects, personalities — chronologically aur interestingly samjhao. India aur world history dono.',
+  Geography:   'Tum ek Geography teacher ho. Maps, climate, landforms, human geography, resources — clearly explain karo with real examples.',
+  Computer:    'You are a Computer Science teacher. Explain programming concepts, algorithms, data structures, and CS theory clearly. Include code examples in proper syntax when relevant.',
+  Economics:   'Tum ek Economics teacher ho. Micro/macro economics, GDP, inflation, market structures — real-world Indian examples ke saath samjhao.',
+  Science:     'Tum ek Science teacher ho (Class 6-10 level). Physics, Chemistry, Biology — sab easy language mein samjhao with experiments aur diagrams described.',
+};
+
+/* ── STATE ────────────────────────────────────────────── */
+let subject  = 'General';
+let subjEmoji = '🌟';
+let history  = [];          // [{role,parts}]
+let loading  = false;
+let pendingImg = null;      // {base64, mimeType, name, size}
+
+/* ── DOM ──────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const ta        = $('ta');
+const sendBtn   = $('sendBtn');
+const chatInner = $('chatInner');
+const chatScroll= $('chatScroll');
+const welcomeEl = $('welcomeEl');
+const fileInput = $('fileInput');
+const imgBar    = $('imgBar');
+const imgThumb  = $('imgThumb');
+const imgRemove = $('imgRemove');
+const imgName   = $('imgName');
+const imgSize   = $('imgSize');
+const charCt    = $('charCt');
+const modal     = $('modal');
+const modalKey  = $('modalKey');
+
+/* ── INIT ─────────────────────────────────────────────── */
+function init() {
+  updateApiUI();
+  updateSendBtn();
+  ta.focus();
+}
+
+function updateApiUI() {
+  $('apiDot').className   = API_KEY ? 'api-dot' : 'api-dot off';
+  $('apiStatusTxt').textContent = API_KEY ? 'API Connected ✓' : 'API Key Missing';
+}
+
+/* ── SUBJECT ──────────────────────────────────────────── */
+document.querySelectorAll('.subj-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.subj-item').forEach(x => x.classList.remove('active'));
+    el.classList.add('active');
+    subject   = el.dataset.s;
+    subjEmoji = el.dataset.e;
+    $('topbarIcon').textContent  = subjEmoji;
+    $('topbarTitle').textContent = subject + ' Assistant';
+    toast(`📖 ${subject} mode`);
+    // mobile: close sidebar
+    if (window.innerWidth <= 700) closeSidebar();
+  });
+});
+
+/* ── SIDEBAR MOBILE ───────────────────────────────────── */
+$('menuBtn').addEventListener('click', () => {
+  $('sidebar').classList.toggle('open');
+  $('sbOverlay').classList.toggle('show');
+});
+$('sbOverlay').addEventListener('click', closeSidebar);
+function closeSidebar() {
+  $('sidebar').classList.remove('open');
+  $('sbOverlay').classList.remove('show');
+}
+
+/* ── NEW CHAT ─────────────────────────────────────────── */
+$('newChatBtn').addEventListener('click', () => {
+  history = [];
+  clearImg();
+  // Remove all messages except welcome
+  Array.from(chatInner.children).forEach(c => { if (c !== welcomeEl) c.remove(); });
+  welcomeEl.style.display = 'flex';
+  toast('🔄 New chat started');
+  if (window.innerWidth <= 700) closeSidebar();
+});
+
+/* ── CLEAR ────────────────────────────────────────────── */
+$('clearBtn').addEventListener('click', () => {
+  history = [];
+  clearImg();
+  Array.from(chatInner.children).forEach(c => { if (c !== welcomeEl) c.remove(); });
+  welcomeEl.style.display = 'flex';
+  toast('🗑️ Chat cleared');
+});
+
+/* ── QUICK PROMPTS ────────────────────────────────────── */
+document.querySelectorAll('.qp').forEach(el => {
+  el.addEventListener('click', () => {
+    ta.value = el.dataset.q;
+    autoResize(); updateSendBtn(); ta.focus();
+  });
+});
+
+/* ── TEXTAREA ─────────────────────────────────────────── */
+function autoResize() {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
+}
+function updateSendBtn() {
+  const hasContent = ta.value.trim() || pendingImg;
+  sendBtn.disabled = !hasContent || !API_KEY || loading;
+  charCt.textContent = ta.value.length + ' / 8000';
+}
+ta.addEventListener('input', () => { autoResize(); updateSendBtn(); });
+ta.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
+});
+sendBtn.addEventListener('click', send);
+
+/* ── IMAGE HANDLING ───────────────────────────────────── */
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { toast('❌ File 10MB se bada nahi hona chahiye'); return; }
+  if (!file.type.startsWith('image/')) { toast('❌ Sirf image files allowed hain'); return; }
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const base64Full = ev.target.result;         // data:image/jpeg;base64,....
+    const base64     = base64Full.split(',')[1];
+    pendingImg = { base64, mimeType: file.type, name: file.name, size: file.size };
+
+    imgThumb.src   = base64Full;
+    imgName.textContent = file.name;
+    imgSize.textContent = formatSize(file.size) + ' • ' + file.type.split('/')[1].toUpperCase();
+    imgBar.classList.add('show');
+    updateSendBtn();
+    toast('📷 Image ready! Sawal likho aur send karo.');
+  };
+  reader.readAsDataURL(file);
+  fileInput.value = ''; // reset
+});
+
+imgRemove.addEventListener('click', clearImg);
+function clearImg() {
+  pendingImg = null;
+  imgBar.classList.remove('show');
+  imgThumb.src = '';
+  updateSendBtn();
+}
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+/* ── API MODAL ────────────────────────────────────────── */
+$('apiBtn').addEventListener('click', () => {
+  modal.classList.remove('hidden');
+  modalKey.value = API_KEY === DEFAULT_KEY ? '' : API_KEY;
+  setTimeout(() => modalKey.focus(), 120);
+});
+$('apiStatus').addEventListener('click', () => $('apiBtn').click());
+$('modalClose').addEventListener('click', () => modal.classList.add('hidden'));
+modal.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+$('modalSave').addEventListener('click', saveKey);
+modalKey.addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
+
+function saveKey() {
+  const k = modalKey.value.trim();
+  if (!k) { toast('❌ Key enter karo'); return; }
+  if (!k.startsWith('AIza') || k.length < 30) { toast('❌ Invalid key format'); return; }
+  API_KEY = k;
+  localStorage.setItem('vidya_api_key', k);
+  modal.classList.add('hidden');
+  updateApiUI(); updateSendBtn();
+  toast('✅ API Key saved!');
+}
+
+/* ── RENDER HELPERS ───────────────────────────────────── */
+function renderMD(text) {
+  return marked.parse(text, { breaks: true, gfm: true });
+}
+function tryMath(el) {
+  if (window.renderMathInElement) {
+    renderMathInElement(el, {
+      delimiters: [
+        { left:'$$', right:'$$', display:true },
+        { left:'$',  right:'$',  display:false },
+        { left:'\\[', right:'\\]', display:true },
+        { left:'\\(', right:'\\)', display:false },
+      ],
+      throwOnError: false
+    });
+  } else {
+    // retry after katex loads
+    setTimeout(() => { if (window.renderMathInElement) tryMath(el); }, 400);
+  }
+}
+
+/* ── APPEND MESSAGE ───────────────────────────────────── */
+function appendMsg(role, text, imgSrc) {
+  if (welcomeEl.style.display !== 'none') welcomeEl.style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+
+  const av = document.createElement('div');
+  av.className = 'av';
+  av.textContent = role === 'user' ? '👤' : '🤖';
+
+  const bub = document.createElement('div');
+  bub.className = 'bubble';
+
+  if (role === 'ai' && subject !== 'General') {
+    const tag = document.createElement('div');
+    tag.className = 'subj-tag';
+    tag.textContent = subjEmoji + ' ' + subject;
+    bub.appendChild(tag);
+  }
+
+  if (imgSrc) {
+    const img = document.createElement('img');
+    img.className = 'msg-img-prev';
+    img.src = imgSrc;
+    img.alt = 'uploaded image';
+    bub.appendChild(img);
+  }
+
+  const cont = document.createElement('div');
+  if (role === 'user') {
+    if (text) cont.textContent = text;
+  } else {
+    cont.innerHTML = renderMD(text);
+    setTimeout(() => tryMath(bub), 80);
+  }
+  bub.appendChild(cont);
+
+  wrap.appendChild(av);
+  wrap.appendChild(bub);
+  chatInner.appendChild(wrap);
+  scrollBottom();
+  return wrap;
+}
+
+/* ── TYPING INDICATOR ─────────────────────────────────── */
+function showTyping() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ai'; wrap.id = 'typingWrap';
+  const av = document.createElement('div'); av.className='av'; av.textContent='🤖';
+  const bub = document.createElement('div'); bub.className='bubble';
+  bub.innerHTML = '<div class="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
+  wrap.appendChild(av); wrap.appendChild(bub);
+  chatInner.appendChild(wrap);
+  scrollBottom();
+}
+function hideTyping() { const t=$('typingWrap'); if(t) t.remove(); }
+
+function scrollBottom() {
+  chatScroll.scrollTo({ top: chatScroll.scrollHeight, behavior:'smooth' });
+}
+
+/* ── SEND ─────────────────────────────────────────────── */
+async function send() {
+  const txt = ta.value.trim();
+  if ((!txt && !pendingImg) || loading || !API_KEY) return;
+
+  loading = true; updateSendBtn();
+
+  // Capture & clear
+  const userText = txt;
+  const userImg  = pendingImg;
+  const userImgSrc = userImg ? ('data:' + userImg.mimeType + ';base64,' + userImg.base64) : null;
+
+  ta.value = ''; autoResize(); charCt.textContent = '0 / 8000';
+  clearImg();
+
+  // Show user message
+  appendMsg('user', userText, userImgSrc);
+
+  // Build parts for Gemini
+  const userParts = [];
+  if (userImg) {
+    userParts.push({ inline_data: { mime_type: userImg.mimeType, data: userImg.base64 } });
+  }
+  if (userText) userParts.push({ text: userText });
+  if (!userText && userImg) userParts.push({ text: 'Is image mein kya hai? Explain karo aur agar koi question/problem hai to solve karo.' });
+
+  // Push to history
+  history.push({ role:'user', parts: userParts });
+
+  showTyping();
+
+  try {
+    const sysPrompt = SUBJECT_PROMPTS[subject] || SUBJECT_PROMPTS.General;
+
+    const body = {
+      system_instruction: { parts: [{ text: sysPrompt }] },
+      contents: history,
+      generationConfig: {
+        temperature: 0.72,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 3072,
+      },
+      safetySettings: [
+        { category:'HARM_CATEGORY_HARASSMENT',        threshold:'BLOCK_NONE' },
+        { category:'HARM_CATEGORY_HATE_SPEECH',       threshold:'BLOCK_NONE' },
+        { category:'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold:'BLOCK_MEDIUM_AND_ABOVE' },
+        { category:'HARM_CATEGORY_DANGEROUS_CONTENT', threshold:'BLOCK_NONE' },
+      ]
+    };
+
+    const res = await fetch(API_URL(API_KEY), {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+
+    hideTyping();
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err?.error?.message || `HTTP ${res.status}`;
+      showErr(msg, res.status);
+      history.pop(); // rollback
+      return;
+    }
+
+    const data  = await res.json();
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!reply) {
+      showErr('Koi jawab nahi mila. Dobara try karo!');
+      history.pop();
+      return;
+    }
+
+    history.push({ role:'model', parts:[{ text: reply }] });
+    appendMsg('ai', reply);
+
+  } catch(e) {
+    hideTyping();
+    showErr('Network error! Internet check karo.');
+    history.pop();
+  } finally {
+    loading = false; updateSendBtn(); ta.focus();
+  }
+}
+
+/* ── ERROR ────────────────────────────────────────────── */
+function showErr(msg, status) {
+  if (welcomeEl.style.display !== 'none') welcomeEl.style.display = 'none';
+  const div = document.createElement('div');
+  div.className = 'err-bubble';
+  const apiHint = (status === 400 || status === 403 || (msg||'').includes('API') || (msg||'').includes('key'))
+    ? '<br/><small style="opacity:.7">🔑 API Key check karo — Settings button dabao</small>' : '';
+  div.innerHTML = `<span style="font-size:22px">⚠️</span><div><strong>Error:</strong> ${msg}${apiHint}</div>`;
+  chatInner.appendChild(div);
+  scrollBottom();
+}
+
+/* ── TOAST ────────────────────────────────────────────── */
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+/* ── GO ───────────────────────────────────────────────── */
+init();
+</script>
+</body>
+</html>
